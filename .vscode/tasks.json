@@ -6,12 +6,12 @@
         {
             "label": "CreateFolder",
             "type": "shell",
-            "command": "fusermount -uz mnt3;mkdir -p mnt3"
+            "command": "fusermount -uz mnt2;mkdir -p ./mnt2"
         },
         {
             "label": "Umount",
             "type": "shell",
-            "command": "umount -l mnt3"
+            "command": "umount -l mnt2;rmdir mnt2"
         }
     ]
 }

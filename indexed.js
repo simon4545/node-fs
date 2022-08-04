@@ -20,6 +20,21 @@ module.exports = function (opts) {
       cacheManager = new CacheManager();
       cb(0)
     },
+    statfs(path, cb) {
+      cb(0, {
+        bsize: 1000000,
+        frsize: 1000000,
+        blocks: 1000000,
+        bfree: 1000000,
+        bavail: 1000000,
+        files: 1000000,
+        ffree: 1000000,
+        favail: 1000000,
+        fsid: 1000000,
+        flag: 1000000,
+        namemax: 1000000
+      })
+    },
     // rename(src, dest, cb) { },
     // link(src, dest, cb) { },
     // symlink(src, dest, cb) { },
@@ -64,24 +79,61 @@ module.exports = function (opts) {
       await knex('paths').where("parent", result['ino']).del()
       cb(0)
     },
-    open(path, flags, cb) {
-      // Was O_DIRECTORY specified?
-      if ((flags & 0o200000) && ((doc.mode & 0o170000) !== 0o040000)) {
-        return cb(fuse.ENOTDIR);
+    async mknod(path, mode, dev, cb){
+      let result = await knex('paths').max('ino as maxino').first()
+      if (!result) {
+        return callback(fuse.ENOENT)
       }
-      return cacheManager.tryGetNextFD()
+      let basepath = fsutil.base_path(path);
+      let parentrow = await knex('paths').select('ino').where('path', basepath).first();
+      let curr = new Date().getTime() / 1000;
+      const context = fuse.context();
+      result = await knex('paths').insert({
+        ctime: curr,
+        atime: curr,
+        mtime: curr,
+        mode: mode,
+        rdev:dev,
+        uid: context.uid,
+        gid: context.gid,
+        nlink: 0, size: 0, type: 2,
+        path: path,
+        parent: parentrow['ino']
+      })
+      return cb(0, result[0])
     },
-    close(fd) { },
-    read(fd, buf, offset = 0, length = buf.length, position) {
-
-    },
-    write(path, fd, buffer, length, position, cb) {
-      let find_result = this.cacheManager.findByFD(fd)
-      if (find_result == -1) {
+    
+    async read(path, fd, buffer, length, position, cb) {
+      let result = await knex('paths').where("ino", fd).first()
+      if (!result) {
         return cb(fuse.ENOENT)
       }
-      this.cacheManager.write(fd, position, buffer)
-      cb(length)
+
+    },
+    async open(path, flags, cb) {
+      let result = await knex('paths').where("path", path).first()
+      if (!result) {
+        return cb(fuse.ENOENT)
+      }
+      return cb(0, result["ino"])
+    },
+    async release(path, fd, cb) { 
+      cb(0) 
+    },
+    async read(path, fd, buf, len, pos, cb) {
+      let result = await knex('paths').where("path", path).first()
+      if (!result) {
+        return cb(fuse.ENOENT)
+      }
+      cb(Buffer.from([11111]))
+    },
+    async write(path, fd, buffer, length, position, cb) {
+      let result = await knex('paths').where("ino", fd).first()
+      if (!result) {
+        return cb(fuse.ENOENT)
+      }
+      
+      cb(cacheManager.write(fd, path, position, buffer, length))
     },
     // releasedir(path, fd, cb) { },
     // opendir(path, flags, cb) { },
@@ -113,7 +165,35 @@ module.exports = function (opts) {
         cb(0, data)
       }
     },
-    // statfs(path, cb) { }
+    async fgetattr(path, fd, cb) {
+      if (path === '/') {
+        cb(0, { mtime: new Date(), atime: new Date(), ctime: new Date(), nlink: 2, size: 4096, mode: 16895, uid: process.getuid ? process.getuid() : 0, gid: process.getgid ? process.getgid() : 0, dev: 0, rdev: 0, blocks: 1 })
+        return
+      } else {
+        let data = await knex('paths').select('atime', 'ctime', 'mtime', 'size', 'mode', 'uid', 'gid', 'ino').where('path', path).first()
+        if (!data) {
+          return cb(fuse.ENOENT)
+        }
+        data['atime'] = data['atime'] * 1000;
+        data['ctime'] = data['ctime'] * 1000;
+        data['mtime'] = data['mtime'] * 1000;
+        cb(0, data)
+      }
+    },
+    access(path, mode, cb) {
+      cb(0)
+    },
+    async utimens(path /*:string*/, atime /*:Date*/, mtime /*:Date*/, cb /*:function*/) {
+      let result = await knex('paths').where("path", path).first()
+      if (!result) {
+        return cb(fuse.ENOENT)
+      }
+      result = await knex('paths').where(ino, result['ino']).update({
+        atime: atime.getTime(),
+        mtime: mtime.getTime()
+      })
+      cb(0)
+    }
   }
 }
 
