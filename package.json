@@ -1,0 +1,22 @@
+{
+  "name": "chunkfs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "async": "^3.2.4",
+    "filesystem-constants": "^1.0.0",
+    "knex": "^2.2.0",
+    "level": "^8.0.0",
+    "mysql": "^2.18.1",
+    "node-fuse-bindings": "^2.12.4"
+  },
+  "devDependencies": {
+    "tape": "^4.11.0"
+  },
+  "author": "",
+  "license": "ISC"
+}

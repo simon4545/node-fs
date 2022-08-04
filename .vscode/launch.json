@@ -1,0 +1,44 @@
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "type": "pwa-node",
+            "request": "launch",
+            "name": "Launch Program",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "preLaunchTask": "CreateFolder",
+            "postDebugTask": "Umount",
+            "program": "${workspaceFolder}/index.js",
+            "args": [
+                "./mnt3"
+            ]
+        },
+        {
+            "type": "pwa-node",
+            "request": "launch",
+            "name": "Launch Other",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "preLaunchTask": "CreateFolder",
+            "postDebugTask": "Umount",
+            "program": "${workspaceFolder}/node/index.js",
+            "args": [
+                "./mnt3"
+            ]
+        }
+    ]
+}
