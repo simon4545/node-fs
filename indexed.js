@@ -92,33 +92,25 @@ module.exports = function (opts) {
         return callback(fuse.ENOENT)
       }
       result = await knex('paths').select("path").where('parent', result['ino'])
-      result=result.map((item)=>{
+      result = result.map((item) => {
         return fsutil.real_name(item['path'])
       })
       cb(0, result)
     },
     // fsyncdir(path, fd, datasync, cb) { },
-    getattr(path, cb) {
+    async getattr(path, cb) {
       if (path === '/') {
         cb(0, { mtime: new Date(), atime: new Date(), ctime: new Date(), nlink: 2, size: 4096, mode: 16895, uid: process.getuid ? process.getuid() : 0, gid: process.getgid ? process.getgid() : 0, dev: 0, rdev: 0, blocks: 1 })
         return
       } else {
-        async.waterfall([
-          function (callback) {
-            knex('paths').select('*').where('path', path).first().then((data) => {
-              if (!data) {
-                return callback(fuse.ENOENT)
-              }
-              callback(null, data);
-            }).catch((err) => {
-              callback(err)
-            })
-          }
-        ], function (err, result) {
-          if (err)
-            return cb(err);
-          cb(0, result)
-        });
+        let data = await knex('paths').select('atime', 'ctime', 'mtime', 'size', 'mode', 'uid', 'gid', 'ino').where('path', path).first()
+        if (!data) {
+          return cb(fuse.ENOENT)
+        }
+        data['atime'] = data['atime'] * 1000;
+        data['ctime'] = data['ctime'] * 1000;
+        data['mtime'] = data['mtime'] * 1000;
+        cb(0, data)
       }
     },
     // statfs(path, cb) { }
