@@ -35,6 +35,12 @@ module.exports = function (opts) {
         namemax: 1000000
       })
     },
+    chown(path /*:string*/, uid /*:number*/, gid /*:number*/, cb /*:function*/){
+      cb(0)
+    },
+    chmod(path /*:string*/, mode /*:number*/, cb /*:function*/){
+      cb(0)
+    },
     // rename(src, dest, cb) { },
     // link(src, dest, cb) { },
     // symlink(src, dest, cb) { },
